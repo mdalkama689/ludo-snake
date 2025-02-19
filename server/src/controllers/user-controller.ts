@@ -3,7 +3,7 @@ import prisma from "../db/db";
 import bcrypt from "bcrypt";
 import jwt from 'jsonwebtoken'
 
-async function signUp(req: Request, res: Response) {
+async function signUp(req: Request, res: Response):Promise<any> {
   try {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -51,7 +51,7 @@ async function signUp(req: Request, res: Response) {
 }
 
 
-async function signIn(req: Request, res: Response) {
+async function signIn(req: Request, res: Response): Promise<any>{
     try {
       const { username, password } = req.body;
       if (!username || !password) {
@@ -81,9 +81,16 @@ async function signIn(req: Request, res: Response) {
           });
      }
   
+     const userId = user.id
+     const JWT_SECRET = process.env.JWT_SECRET || 'secret'
+
+
+     const token = await jwt.sign({userId}, JWT_SECRET, {expiresIn: '1h'})
+
       return res.status(201).json({
         success: true,
         message: "Signin successfully!",
+        token
       });
     } catch (error) {
       const message =
@@ -97,3 +104,7 @@ async function signIn(req: Request, res: Response) {
   }
   
   
+
+export {
+  signUp, signIn
+}
