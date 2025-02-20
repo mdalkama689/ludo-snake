@@ -14,6 +14,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.signUp = signUp;
 exports.signIn = signIn;
+exports.getProfile = getProfile;
+exports.createRoom = createRoom;
+exports.checkRoom = checkRoom;
 const db_1 = __importDefault(require("../db/db"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -53,7 +56,7 @@ function signUp(req, res) {
         catch (error) {
             const message = error instanceof Error ? error.message : "Something went wrong!";
             return res.status(400).json({
-                success: true,
+                success: false,
                 message,
             });
         }
@@ -71,8 +74,8 @@ function signIn(req, res) {
             }
             const user = yield db_1.default.user.findFirst({
                 where: {
-                    username
-                }
+                    username,
+                },
             });
             if (!user) {
                 return res.status(400).json({
@@ -88,18 +91,123 @@ function signIn(req, res) {
                 });
             }
             const userId = user.id;
-            const JWT_SECRET = process.env.JWT_SECRET || 'secret';
-            const token = yield jsonwebtoken_1.default.sign({ userId }, JWT_SECRET, { expiresIn: '1h' });
+            const JWT_SECRET = process.env.JWT_SECRET || "secret";
+            const token = yield jsonwebtoken_1.default.sign({ userId }, JWT_SECRET, { expiresIn: "1h" });
             return res.status(201).json({
                 success: true,
                 message: "Signin successfully!",
-                token
+                token,
             });
         }
         catch (error) {
             const message = error instanceof Error ? error.message : "Something went wrong!";
             return res.status(400).json({
+                success: false,
+                message,
+            });
+        }
+    });
+}
+function getProfile(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            if (!req.user)
+                return;
+            const userId = req.user.userId;
+            const user = yield db_1.default.user.findUnique({
+                where: {
+                    id: Number(userId),
+                },
+            });
+            if (!user) {
+                return res.status(400).json({
+                    success: false,
+                    message: "user not found",
+                });
+            }
+            user.password = "";
+            return res.status(201).json({
                 success: true,
+                message: "got user details!",
+                user,
+            });
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : "Something went wrong!";
+            return res.status(400).json({
+                success: false,
+                message,
+            });
+        }
+    });
+}
+function createRoom(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { roomName } = req.body;
+            if (!roomName) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please enter room name",
+                });
+            }
+            const room = yield db_1.default.room.create({
+                data: {
+                    roomName,
+                },
+            });
+            return res.status(201).json({
+                success: true,
+                message: "Room created successfully!",
+                roomId: room.id,
+            });
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : "Something went wrong!";
+            return res.status(400).json({
+                success: false,
+                message,
+            });
+        }
+    });
+}
+function checkRoom(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { roomId } = req.body;
+            if (!roomId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please enter room id",
+                });
+            }
+            const NumRegex = /^-?\d+$/;
+            if (!NumRegex.test(roomId)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid room ID. It must be a valid number. ",
+                });
+            }
+            const room = yield db_1.default.room.findFirst({
+                where: {
+                    id: Number(roomId),
+                },
+            });
+            if (!room) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Room not found",
+                });
+            }
+            return res.status(201).json({
+                success: true,
+                message: "Room found  successfully!",
+            });
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : "Something went wrong!";
+            return res.status(400).json({
+                success: false,
                 message,
             });
         }

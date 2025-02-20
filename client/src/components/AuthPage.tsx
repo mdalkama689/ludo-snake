@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Input from "./ui/Input";
 import Button from "./ui/Button";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../helper/axiosInstance";
 import { toast } from "react-toastify";
+import { AuthContext } from "../context/AuthContext";
 
 interface IFormData {
   username: string;
@@ -19,6 +20,10 @@ const AuthPage = ({ type }: { type: string }) => {
   });
 
   const navigate = useNavigate();
+const auth = useContext(AuthContext)
+if(!auth) return  
+const {setIsAuthenticated} = auth
+
   const handleSubmit = async (e: MouseEvent) => {
     try {
       const reqType = type === "signup" ? "signup" : "signin";
@@ -31,6 +36,7 @@ const AuthPage = ({ type }: { type: string }) => {
       }
       if (type === "signin") {
         localStorage.setItem("token", response.data.token);
+        setIsAuthenticated(true)
       }
     } catch (error: any) {
       const message = error?.response?.data?.message || "Something went wromg!";
@@ -43,7 +49,7 @@ const AuthPage = ({ type }: { type: string }) => {
   const handleInput = (e) => {
     const { name, value } = e.target;
 
-    console.log(value)
+    console.log(value);
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -51,7 +57,7 @@ const AuthPage = ({ type }: { type: string }) => {
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center flex-col">
+    <div className="h-screen w-full flex items-center justify-center flex-col bg-black">
       <div className=" w-[400px] bg-white rounded-lg shadow border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
         <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
           <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
@@ -61,14 +67,13 @@ const AuthPage = ({ type }: { type: string }) => {
           </h1>
           <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
             <div>
-              
               <Input
                 type="text"
                 placeholder="username"
                 onChange={handleInput}
                 value={formData.username}
                 disabled={isLoading}
-                name='username'
+                name="username"
               />
             </div>
             <div>
@@ -78,12 +83,12 @@ const AuthPage = ({ type }: { type: string }) => {
                 placeholder="••••••••"
                 onChange={handleInput}
                 value={formData.password}
-                name='password'
+                name="password"
               />
             </div>
 
             <Button
-              //   onClick={handleInput}
+              className="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
               disabled={isLoading}
               text={type === "signup" ? "Sign In" : "Sign In"}
             />

@@ -2,7 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const user_controller_1 = require("../controllers/user-controller");
+const middleware_1 = require("../middleware");
 const router = (0, express_1.Router)();
 router.post('/signup', user_controller_1.signUp);
 router.post('/signin', user_controller_1.signIn);
+router.get('/me', middleware_1.authMiddleware, user_controller_1.getProfile);
+router.post('/create-room', middleware_1.authMiddleware, user_controller_1.createRoom);
+router.post('/check-room', middleware_1.authMiddleware, user_controller_1.checkRoom);
 exports.default = router;
