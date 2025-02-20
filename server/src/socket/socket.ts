@@ -10,6 +10,9 @@ const socketHandler = (socket: any) => {
     if (parsedMessage.type === "host") {
       socket.send("Please wait unitl another player will come");
     }
+    if(parsedMessage.type === 'player'){
+      
+    }
   });
 };
 
