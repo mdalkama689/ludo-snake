@@ -23,9 +23,5 @@ const httpServer = app.listen(3000, () => {
 const wss = new ws_1.WebSocketServer({ server: httpServer });
 wss.on('connection', (ws) => {
     console.log('new user connected');
-    ws.send('thanks for connectig');
     (0, socket_1.default)(ws);
-    ws.on('close', () => {
-        console.log('user disconnected');
-    });
 });

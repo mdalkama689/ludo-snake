@@ -4,9 +4,12 @@ import { token } from "../config";
 
 export const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }: {children : React.ReactNode}) => {
-  const [loading, setLoading] = useState<boolean >(true);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [loading, setLoading] = useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [username, setUsername] = useState<string>("");
+  const [playerOne, setPlayerOne] = useState<boolean>(false);
+  const [playerTwo, setPlayerTwo] = useState<boolean>(false);
 
   useEffect(() => {
     const isUserLoggedin = async () => {
@@ -16,8 +19,11 @@ export const AuthProvider = ({ children }: {children : React.ReactNode}) => {
             Authorization: `Bearer ${token}`,
           },
         });
-
+    
         setIsAuthenticated(res.data.success);
+        if(res.data.success){
+          setUsername(res.data.user.username);
+        }
       } catch (error) {
         console.log(error);
       } finally {
@@ -29,7 +35,16 @@ export const AuthProvider = ({ children }: {children : React.ReactNode}) => {
 
   return (
     <AuthContext.Provider
-      value={{ loading, isAuthenticated, setIsAuthenticated }}
+      value={{
+        loading,
+        isAuthenticated,
+        setIsAuthenticated,
+        username,
+        playerOne,
+        setPlayerOne,
+        playerTwo,
+        setPlayerTwo,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -8,7 +8,7 @@ interface IInput {
 }
 
 const Input = ({ type, placeholder, onChange, value, disabled, name }: IInput) => {
-  console.log(value)
+  
   return (
     <input
       type={type}
