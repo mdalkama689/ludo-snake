@@ -90,6 +90,7 @@ async function signIn(req: Request, res: Response): Promise<any> {
       success: true,
       message: "Signin successfully!",
       token,
+      user
     });
   } catch (error) {
     const message =

@@ -97,6 +97,7 @@ function signIn(req, res) {
                 success: true,
                 message: "Signin successfully!",
                 token,
+                user
             });
         }
         catch (error) {

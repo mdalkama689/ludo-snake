@@ -31,7 +31,7 @@ const Home = () => {
 
       if (response.data.success) {
         const roomId = (response.data.roomId).toString()
-        navigate(`/ludo/${roomId}`, {state: {type: 'host', roomId}});
+        navigate(`/ludo/${roomId}`, {state: {type: 'host',}});
       }
     } catch (error) {
       const message = error?.response?.data?.message || "Something went wrong";
@@ -57,7 +57,7 @@ const Home = () => {
       );
 
       if (response.data.success) {
-        navigate(`/ludo/${roomId}`, {state: {type: 'player', roomId}});
+        navigate(`/ludo/${roomId}`, {state: {type: 'player'}});
       }
     } catch (error) {
       const message = error?.response?.data?.message || "Something went wrong";

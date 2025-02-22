@@ -2,14 +2,19 @@ import React, { createContext, useEffect, useState } from "react";
 import axiosInstance from "../helper/axiosInstance";
 import { token } from "../config";
 
-export const AuthContext = createContext(null);
+interface IAuthContext {
+  loading: boolean;
+  isAuthenticated: boolean;
+  setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>;
+  username: string;
+  setUsername: React.Dispatch<React.SetStateAction<string>>;
+}
+export const AuthContext = createContext<IAuthContext | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [username, setUsername] = useState<string>("");
-  const [playerOne, setPlayerOne] = useState<boolean>(false);
-  const [playerTwo, setPlayerTwo] = useState<boolean>(false);
 
   useEffect(() => {
     const isUserLoggedin = async () => {
@@ -19,9 +24,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             Authorization: `Bearer ${token}`,
           },
         });
-    
         setIsAuthenticated(res.data.success);
-        if(res.data.success){
+        if (res.data.success) {
           setUsername(res.data.user.username);
         }
       } catch (error) {
@@ -33,6 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isUserLoggedin();
   }, []);
 
+
   return (
     <AuthContext.Provider
       value={{
@@ -40,10 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isAuthenticated,
         setIsAuthenticated,
         username,
-        playerOne,
-        setPlayerOne,
-        playerTwo,
-        setPlayerTwo,
+        setUsername,
       }}
     >
       {children}

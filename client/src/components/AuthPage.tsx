@@ -22,7 +22,7 @@ const AuthPage = ({ type }: { type: string }) => {
   const navigate = useNavigate();
 const auth = useContext(AuthContext)
 if(!auth) return  
-const {setIsAuthenticated} = auth
+const {setIsAuthenticated, setUsername} = auth
 
   const handleSubmit = async (e: MouseEvent) => {
     try {
@@ -30,13 +30,14 @@ const {setIsAuthenticated} = auth
       e.preventDefault();
       setIsLaoding(true);
       const response = await axiosInstance.post(`/${reqType}`, formData);
-      console.log(response);
+     
       if (response.data.success) {
         navigate(type === "signup" ? "/signin" : "/");
       }
       if (type === "signin") {
         localStorage.setItem("token", response.data.token);
         setIsAuthenticated(true)
+        setUsername(response.data.user.username)
       }
     } catch (error: any) {
       const message = error?.response?.data?.message || "Something went wromg!";
@@ -49,7 +50,6 @@ const {setIsAuthenticated} = auth
   const handleInput = (e) => {
     const { name, value } = e.target;
 
-    console.log(value);
     setFormData((prev) => ({
       ...prev,
       [name]: value,

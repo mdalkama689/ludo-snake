@@ -23,9 +23,9 @@ const httpServer = app.listen(3000, () => {
 
 const wss = new WebSocketServer({ server: httpServer });
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
 console.log('new user connected')
 
-socketHandler(ws)
+socketHandler(ws, req)
 
 })

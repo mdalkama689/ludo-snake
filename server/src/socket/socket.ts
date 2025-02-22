@@ -1,113 +1,71 @@
-let users: any = [];
+import { checkPrime } from "crypto";
+import jwt from "jsonwebtoken";
+import { parse } from "path";
 
-const socketHandler = (socket: any) => {
-  socket.on("message", (message: any) => {
-    const parsedMessage: IParsedMessage = JSON.parse(message.toString());
-    console.log(parsedMessage);
+import url from "url";
 
-    if (parsedMessage.type === "host") {
-      const messageValue: IMessage = {
-        type: "wait",
-        message: "Please wait until another player will come",
-      };
-      socket.send(JSON.stringify(messageValue));
-      users.push({
-        socket,
-        roomId: parsedMessage.roomId,
-        username: parsedMessage.username,
-        host: true,
-      });
-    }
+const rooms = new Map();
 
-    if (parsedMessage.type === "player") {
-      const roomPlayerCount = users.filter(
-        (user: any) => user.roomId == parsedMessage.roomId
-      );
+const socketHandler = async (ws: any, req: any) => {
+  const paramsUrl = url.parse(req.url, true).query;
+  const token = paramsUrl.token;
 
-      if (roomPlayerCount.length == 2) {
-        const messageValue: IMessage = {
-          type: "limit",
-          message: "you cannot allowed max limit reached",
-        };
-        return socket.send(JSON.stringify(messageValue));
+  const isValid = await verifyToken(token);
+  if (!isValid) {
+    ws.close();
+  }
+
+  ws.on("message", (data: any) => {
+    const parsedData = JSON.parse(data);
+    if (parsedData.type === "host") {
+      console.log("host");
+      const currentRoomId = parsedData.roomId;
+      if (!rooms.has(currentRoomId)) {
+        rooms.set(currentRoomId, {
+          host: parsedData.host,
+          players: { player1: parsedData.host, player2: "" },
+          sockets: { player1: ws, player2: "" },
+        });
       }
 
-      users.push({
-        socket,
-        roomId: parsedMessage.roomId,
-        username: parsedMessage.username,
-        host: false,
-      });
-
-      const playersInRoom = users.filter(
-        (user: any) => user.roomId == parsedMessage.roomId
-      );
-
-      const messageValue: IMessage = {
-        type: "connected",
-        message: "both are connected, start the game ",
-      };
-
-      const p1 = playersInRoom[0].username;
-      const p2 = playersInRoom[1].username;
-
-      const bothPlayer = {
-        type: "player",
-        players: [p1, p2],
-      };
-
-      let turn: IMessage;
-
-      playersInRoom.map((user: any) => {
-        if (user.host) {
-          turn = {
-            type: "turn",
-            currentTurn: user.username,
-          };
-        }
-
-        user.socket.send(JSON.stringify(messageValue));
-        user.socket.send(JSON.stringify(turn));
-        user.socket.send(JSON.stringify(bothPlayer));
-      });
     }
 
-    if (parsedMessage.type === "turn") {
-      const userInARoom = users.filter(
-        (user: any) => user.roomId == parsedMessage.roomId
-      );
+    if (parsedData.type === "player") {
+      const currentRoomId = parsedData.roomId;
+      const room = rooms.get(currentRoomId);
 
-      const turn = {
-        type: "turn",
-        currentTurn: parsedMessage.currentTurn,
-      };
+      if (!room.players.player2) {
+        room.players.player2 = parsedData.username;
+        room.sockets.player2 = ws;
+      }
+      const data = {
+        type: 'connected',
+        message: 'Both are connected start the game!',
+    players:[room.players.player1, room.players.player2],
+    currentTurnPlayer: room.host 
+      }
 
-      userInARoom.map((user: any) => {
-        user.socket.send(JSON.stringify(turn));
-      });
+      room.sockets.player1.send(JSON.stringify((data)))
+      room.sockets.player2.send(JSON.stringify((data)))
+    }
+
+    if(parsedData.type === 'turn'){
+        console.log(parsedData)
+        const roomId = parsedData.roomId
+        const room = rooms.get(roomId)
+
+        room.sockets.player1.send(JSON.stringify(parsedData))
+        room.sockets.player2.send(JSON.stringify(parsedData))
     }
   });
-
-  socket.on("close", () => {
-    console.log("user disconnected");
-    users = users.filter((user: any) => user.socket != socket);
-  });
-
-  console.log(users.length);
 };
 
 export default socketHandler;
 
-interface IParsedMessage {
-  type: string;
-  roomId: string;
-  username: string;
-  currentTurn?: string;
-}
+const secret = process.env.JWT_SECRET || "secret";
+async function verifyToken(token: any) {
+  const decodeToken = await jwt.verify(token, secret);
+  if (!decodeToken) return false;
 
-interface IMessage {
-  type: string;
-  message?: string;
-  currentTurn?: string;
-  host?: any;
+  return true;
 }

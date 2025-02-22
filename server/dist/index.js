@@ -21,7 +21,7 @@ const httpServer = app.listen(3000, () => {
     console.log("running");
 });
 const wss = new ws_1.WebSocketServer({ server: httpServer });
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
     console.log('new user connected');
-    (0, socket_1.default)(ws);
+    (0, socket_1.default)(ws, req);
 });

@@ -3,17 +3,16 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { token } from "../config";
 import { toast } from "react-toastify";
 import { AuthContext } from "../context/AuthContext";
-import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6 } from "lucide-react";
-
-const allDice = [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6];
+import Dice from "./Dice";
+import Canvas from "./Canvas";
 
 const Room = () => {
   const { roomId } = useParams();
   const wsRef = useRef<WebSocket | null>(null);
-  const [currentPlayer, setCurrentPlayer] = useState("");
+  const [currentPlayer, setCurrentPlayer] = useState<string>("");
   const [bothPlayer, setBothPlayer] = useState([]);
-  const [currentValue, setCurrentValue] = useState(1);
-  const [isRolling, setIsRolling] = useState(false);
+
+  
 
   const { state: message } = useLocation();
   const auth = useContext(AuthContext);
@@ -31,103 +30,62 @@ const Room = () => {
 
   useEffect(() => {
     if (wsRef.current) return;
+
     const ws = new WebSocket(`ws://localhost:3000?token=${token}`);
     wsRef.current = ws;
-    const data = { ...message, username };
 
     ws.onopen = () => {
+      const data =
+        message.type === "host"
+          ? {
+              type: "host",
+              roomId,
+              host: username,
+            }
+          : { type: "player", roomId, username };
+
       ws.send(JSON.stringify(data));
     };
 
-    ws.onmessage = (message) => {
-      const parsedMessage = JSON.parse(message.data);
-      if (parsedMessage.type == "wait") {
-        toast.info(parsedMessage.message);
-      }
-      if (parsedMessage.type == "connected") {
-        toast.info(parsedMessage.message);
-      }
-      if (parsedMessage.type == "limit") {
-        toast.error(parsedMessage.message);
-        navigate("/");
-      }
-      if (parsedMessage.type == "turn") {
-        setCurrentPlayer(parsedMessage.currentTurn);
+    ws.onmessage = (data) => {
+      const parsedData = JSON.parse(data.data);
+
+      if (parsedData.type === "connected") {
+        toast.success(parsedData.message);
+        setBothPlayer(parsedData.players);
+        setCurrentPlayer(parsedData.currentTurnPlayer);
       }
 
-      if (parsedMessage.type == "player") {
-        setBothPlayer(parsedMessage.players);
+      if (parsedData.type === "turn") {
+        console.log(parsedData);
+        setCurrentPlayer(parsedData.currentTurnPlayer);
       }
     };
-
     ws.onclose = () => {
-      console.log("user disconnected");
-      toast.info("socket disconnected");
+      console.log("WebSocket closed. ");
       wsRef.current = null;
     };
-
     return () => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
+      if (ws.readyState === WebSocket.OPEN) {
         ws.close();
       }
     };
   }, []);
 
-  const handleDice = () => {
-    if (isRolling) return;
-    setIsRolling(true);
-
-    let roll = 0;
-    const maxRoll = 10;
-
-    const interval = setInterval(() => {
-      setCurrentValue(Math.floor(Math.random() * 6 + 1));
-      roll++;
-
-      if (roll > maxRoll) {
-        clearInterval(interval);
-        setIsRolling(false);
-      }
-    }, 100);
-
-    if (currentPlayer == bothPlayer[0]) {
-      setCurrentPlayer(bothPlayer[1]);
-
-      const message = {
-        type: "turn",
-        currentTurn: bothPlayer[1],
-        roomId,
-      };
-
-      wsRef.current?.send(JSON.stringify(message));
-    } else {
-      setCurrentPlayer(bothPlayer[0]);
-      const message = {
-        type: "turn",
-        currentTurn: bothPlayer[0],
-        roomId,
-      };
-
-      wsRef.current?.send(JSON.stringify(message));
-    }
-  };
-
-  const DiceIcon = allDice[currentValue - 1];
   return (
     <div className="bg-black h-screen text-white flex items-center justify-center gap-4">
-      <div className="absolute right-3 top-3">
-        <button
-          className={`  p-2 bg-white rounded-2xl shadow-lg
-      hover:shadow-xl transition-all duration-300  `}
-          onClick={handleDice}
-          disabled={currentPlayer != username}
-        >
-          <DiceIcon
-            className={`text-indigo-400 w-20 h-20 ${
-              isRolling ? "animate-spin" : ""
-            }`}
-          />
-        </button>
+      <p className="absolute top-0 left-1/2 text-white">currentPlayer -------- {currentPlayer}</p>
+      <Dice
+        currentPlayer={currentPlayer}
+        setCurrentPlayer={setCurrentPlayer}
+        bothPlayer={bothPlayer}
+        username={username}
+        roomId={roomId}
+        wsRef={wsRef}
+      />
+
+      <div>
+        <Canvas />
       </div>
     </div>
   );
