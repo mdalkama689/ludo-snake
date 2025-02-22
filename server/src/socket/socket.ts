@@ -48,7 +48,6 @@ const socketHandler = (socket: any) => {
         message: "both are connected, start the game ",
       };
 
-   
       const p1 = playersInRoom[0].username;
       const p2 = playersInRoom[1].username;
 
@@ -70,6 +69,21 @@ const socketHandler = (socket: any) => {
         user.socket.send(JSON.stringify(messageValue));
         user.socket.send(JSON.stringify(turn));
         user.socket.send(JSON.stringify(bothPlayer));
+      });
+    }
+
+    if (parsedMessage.type === "turn") {
+      const userInARoom = users.filter(
+        (user: any) => user.roomId == parsedMessage.roomId
+      );
+
+      const turn = {
+        type: "turn",
+        currentTurn: parsedMessage.currentTurn,
+      };
+
+      userInARoom.map((user: any) => {
+        user.socket.send(JSON.stringify(turn));
       });
     }
   });

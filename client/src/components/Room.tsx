@@ -1,26 +1,34 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { data, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { token } from "../config";
 import { toast } from "react-toastify";
-import Dice from "./Dice";
 import { AuthContext } from "../context/AuthContext";
-import IconsBar from "./IconsBar";
+import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6 } from "lucide-react";
+
+const allDice = [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6];
 
 const Room = () => {
   const { roomId } = useParams();
   const wsRef = useRef<WebSocket | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState("");
   const [bothPlayer, setBothPlayer] = useState([]);
+  const [currentValue, setCurrentValue] = useState(1);
+  const [isRolling, setIsRolling] = useState(false);
 
   const { state: message } = useLocation();
   const auth = useContext(AuthContext);
   if (!auth) return;
-  const { username, playerOne, setPlayerOne, playerTwo, setPlayerTwo } = auth;
+  const { username } = auth;
 
   const navigate = useNavigate();
-  if (!message) {
-    navigate("/");
-  }
+
+  useEffect(() => {
+    if (!message) {
+      navigate("/");
+    }
+  }),
+    [];
+
   useEffect(() => {
     if (wsRef.current) return;
     const ws = new WebSocket(`ws://localhost:3000?token=${token}`);
@@ -45,11 +53,9 @@ const Room = () => {
       }
       if (parsedMessage.type == "turn") {
         setCurrentPlayer(parsedMessage.currentTurn);
-        console.log(parsedMessage);
       }
 
       if (parsedMessage.type == "player") {
-        console.log(parsedMessage);
         setBothPlayer(parsedMessage.players);
       }
     };
@@ -67,40 +73,62 @@ const Room = () => {
     };
   }, []);
 
-const handleClick = () => {
-  const randomNum = Math.floor(Math.random() * 7)
+  const handleDice = () => {
+    if (isRolling) return;
+    setIsRolling(true);
 
-  toast.success(randomNum)
-  if(currentPlayer == bothPlayer[0]){
-    setBothPlayer(bothPlayer[1])
-  }else{
-    setBothPlayer(bothPlayer[0])
-  }
-}
+    let roll = 0;
+    const maxRoll = 10;
 
+    const interval = setInterval(() => {
+      setCurrentValue(Math.floor(Math.random() * 6 + 1));
+      roll++;
+
+      if (roll > maxRoll) {
+        clearInterval(interval);
+        setIsRolling(false);
+      }
+    }, 100);
+
+    if (currentPlayer == bothPlayer[0]) {
+      setCurrentPlayer(bothPlayer[1]);
+
+      const message = {
+        type: "turn",
+        currentTurn: bothPlayer[1],
+        roomId,
+      };
+
+      wsRef.current?.send(JSON.stringify(message));
+    } else {
+      setCurrentPlayer(bothPlayer[0]);
+      const message = {
+        type: "turn",
+        currentTurn: bothPlayer[0],
+        roomId,
+      };
+
+      wsRef.current?.send(JSON.stringify(message));
+    }
+  };
+
+  const DiceIcon = allDice[currentValue - 1];
   return (
     <div className="bg-black h-screen text-white flex items-center justify-center gap-4">
-      <p>current player ----- {currentPlayer}</p>
-      <button onClick={handleClick} disabled={currentPlayer != username} >
-        {" "}
-        click here{" "}
-      </button>
-      {/* <div className="absolute top-4 right-4 flex flex-col items-end gap-2 p-4 bg-gray-100 rounded-lg shadow-md">
-        {bothPlayer.length === 0 ? (
-          <p className="text-lg font-semibold text-gray-800 bg-white px-4 py-2 rounded-md shadow">
-            {username}
-          </p>
-        ) : (
-        bothPlayer &&   bothPlayer.map((player) => (
-            <p
-              key={player}
-              className="text-lg font-semibold text-gray-800 bg-white px-4 py-2 rounded-md shadow"
-            >
-              {player}
-            </p>
-          ))
-        )}
-      </div> */}
+      <div className="absolute right-3 top-3">
+        <button
+          className={`  p-2 bg-white rounded-2xl shadow-lg
+      hover:shadow-xl transition-all duration-300  `}
+          onClick={handleDice}
+          disabled={currentPlayer != username}
+        >
+          <DiceIcon
+            className={`text-indigo-400 w-20 h-20 ${
+              isRolling ? "animate-spin" : ""
+            }`}
+          />
+        </button>
+      </div>
     </div>
   );
 };

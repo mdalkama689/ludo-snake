@@ -57,6 +57,18 @@ const socketHandler = (socket) => {
                 user.socket.send(JSON.stringify(bothPlayer));
             });
         }
+        if (parsedMessage.type === 'turn') {
+            console.log('parsed messag e: ', parsedMessage);
+            const userInARoom = users.filter((user) => (user.roomId == parsedMessage.roomId));
+            console.log('user in a rooom : ', userInARoom);
+            const turn = {
+                type: "turn",
+                currentTurn: parsedMessage.currentTurn
+            };
+            userInARoom.map((user) => {
+                user.socket.send(JSON.stringify(turn));
+            });
+        }
     });
     socket.on("close", () => {
         console.log("user disconnected");
